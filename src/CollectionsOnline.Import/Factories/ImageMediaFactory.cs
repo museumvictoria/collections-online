@@ -40,11 +40,12 @@ namespace CollectionsOnline.Import.Factories
                     FileDerivativeType = FileDerivativeType.Large,
                     Transform = (imageMedia, magickImage, map) =>
                     {
+                        AutoRotateImage(magickImage);
                         AddImageProfile(imageMedia, magickImage, true);
                         
                         magickImage.Format = MagickFormat.Jpeg;
                         magickImage.Resize(new MagickGeometry(3000) { Greater = true });
-                        magickImage.Quality = 86;
+                        magickImage.Quality = 90;
 
                         return magickImage;
                     }
@@ -54,6 +55,7 @@ namespace CollectionsOnline.Import.Factories
                     FileDerivativeType = FileDerivativeType.Thumbnail,
                     Transform = (imageMedia, magickImage, map) =>
                     {
+                        AutoRotateImage(magickImage);
                         AddImageProfile(imageMedia, magickImage);
                         
                         magickImage.Format = MagickFormat.Jpeg;
@@ -67,7 +69,7 @@ namespace CollectionsOnline.Import.Factories
                             magickImage.Resize(new MagickGeometry(250) { FillArea = true });
                             magickImage.Crop(250, 250, Gravity.Center);
                         }
-                        magickImage.Quality = 70;
+                        magickImage.Quality = 74;
 
                         return magickImage;
                     }
@@ -77,11 +79,12 @@ namespace CollectionsOnline.Import.Factories
                     FileDerivativeType = FileDerivativeType.Small,
                     Transform = (imageMedia, magickImage, map) =>
                     {
+                        AutoRotateImage(magickImage);
                         AddImageProfile(imageMedia, magickImage, true);
 
                         magickImage.Format = MagickFormat.Jpeg;
                         magickImage.Resize(new MagickGeometry(0, 500));
-                        magickImage.Quality = 76;
+                        magickImage.Quality = 80;
 
                         return magickImage;
                     }
@@ -91,11 +94,12 @@ namespace CollectionsOnline.Import.Factories
                     FileDerivativeType = FileDerivativeType.Medium,
                     Transform = (imageMedia, magickImage, map) =>
                     {
+                        AutoRotateImage(magickImage);
                         AddImageProfile(imageMedia, magickImage, true);
 
                         magickImage.Format = MagickFormat.Jpeg;
                         magickImage.Resize(new MagickGeometry(1500) { Greater = true });
-                        magickImage.Quality = 76;
+                        magickImage.Quality = 80;
 
                         return magickImage;
                     }
@@ -278,15 +282,15 @@ namespace CollectionsOnline.Import.Factories
 
         private void AddImageProfile(ImageMedia imageMedia, MagickImage magickImage, bool addIptcProfile = false)
         {
-            // Save profiles if there are any
-            var profile = magickImage.GetColorProfile();
+            // Save colour profile
+            var colourProfile = magickImage.GetColorProfile();
 
-            // Strip exif and any profiles
+            // Strip all profiles
             magickImage.Strip();
 
-            // Add original profile back
-            if (profile != null)
-                magickImage.AddProfile(profile);
+            // Add original colour profile back
+            if (colourProfile != null)
+                magickImage.AddProfile(colourProfile);
 
             if (addIptcProfile)
             {
@@ -301,7 +305,43 @@ namespace CollectionsOnline.Import.Factories
                     iptcProfile.SetValue(IptcTag.Source, imageMedia.Sources.Concatenate(", "));
 
                 magickImage.AddProfile(iptcProfile);
-            }            
+            }
+        }
+        
+        private void AutoRotateImage(MagickImage magickImage)
+        {
+            switch (magickImage.Orientation)
+            {
+                case OrientationType.TopLeft:
+                case OrientationType.Undefined:
+                    break;
+                case OrientationType.TopRight:
+                    magickImage.Flop();
+                    break;
+                case OrientationType.BottomRight:
+                    magickImage.Rotate(180);
+                    break;
+                case OrientationType.BottomLeft:
+                    magickImage.Flop();
+                    magickImage.Rotate(180);
+                    break;
+                case OrientationType.LeftTop:
+                    magickImage.Flop();
+                    magickImage.Rotate(-90);
+                    break;
+                case OrientationType.RightTop:
+                    magickImage.Rotate(90);
+                    break;
+                case OrientationType.RightBottom:
+                    magickImage.Flop();
+                    magickImage.Rotate(90);
+                    break;
+                case OrientationType.LeftBotom:
+                    magickImage.Rotate(-90);
+                    break;
+            }
+
+            magickImage.Orientation = OrientationType.TopLeft;
         }
 
         private class ImageMediaJob

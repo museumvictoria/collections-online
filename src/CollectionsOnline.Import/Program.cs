@@ -34,6 +34,8 @@ namespace CollectionsOnline.Import
 
             // Log any exceptions that are not handled
             AppDomain.CurrentDomain.UnhandledException += (sender, eventArgs) => Log.Logger.Fatal((Exception)eventArgs.ExceptionObject, "Unhandled Exception occured in import");
+
+            ImageMagick.OpenCL.IsEnabled = false;
                 
             _kernel = CreateKernel();
 
